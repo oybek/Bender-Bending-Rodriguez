@@ -1,4 +1,4 @@
--module(hello_sup).
+-module(ben_sup).
 
 -behaviour(supervisor).
 

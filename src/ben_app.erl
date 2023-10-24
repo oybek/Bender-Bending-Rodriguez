@@ -1,4 +1,4 @@
--module(hello_app).
+-module(ben_app).
 
 -behaviour(application).
 
@@ -8,7 +8,7 @@ start(_StartType, _StartArgs) ->
     {ok, Config} = file:consult("bot.config"),
     {token, Token} = lists:keyfind(token, 1, Config),
     io:format("~s~n", [Token]),
-    hello_sup:start_link().
+    ben_sup:start_link().
 
 stop(_State) ->
     ok.

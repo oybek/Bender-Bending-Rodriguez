@@ -1,8 +1,8 @@
-{application, hello,
+{application, ben,
  [{description, "An OTP application"},
   {vsn, "0.1.0"},
   {registered, []},
-  {mod, {hello_app, []}},
+  {mod, {ben_app, []}},
   {applications,
    [kernel,
     stdlib

@@ -1,9 +1,11 @@
-hello
+Bender Bending Rodriguez
 =====
 
 An OTP application
 
-Build
+Run locally
 -----
 
-    $ rebar3 compile
+    $ rebar3 shell
+
+    >  application:stop(ben), application:start(ben).
