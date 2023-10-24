@@ -7,5 +7,4 @@ Run locally
 -----
 
     $ rebar3 shell
-
-    >  application:stop(ben), application:start(ben).
+    > r3:do(compile), application:stop(ben), application:start(ben).
