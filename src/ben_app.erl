@@ -18,7 +18,6 @@ start(_StartType, _StartArgs) ->
 
     % Initialize bot
     pe4kin:launch_bot(BotName, BotToken, #{receiver => true}),
-    
     % Subscribe process to telegram updates
     pe4kin_receiver:subscribe(BotName, Pid),
     pe4kin_receiver:start_http_poll(BotName, #{limit => 100, timeout => 60}),
