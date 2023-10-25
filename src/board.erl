@@ -35,9 +35,9 @@ to_inline_keyboard({Xs, Os}) ->
                     C = {X, Y},
                     case {lists:member(C, Xs), lists:member(C, Os)} of
                         {true, false} ->
-                            #{text => <<"x">>};
+                            #{text => <<"x">>, callback_data => to_string(C)};
                         {false, true} ->
-                            #{text => <<"o">>};
+                            #{text => <<"o">>, callback_data => to_string(C)};
                         _ ->
                             #{text => <<" ">>, callback_data => to_string(C)}
                     end
