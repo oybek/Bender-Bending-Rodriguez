@@ -4,10 +4,15 @@
 
 run_upd_handler() ->
     receive
-        {pe4kin_update, BotName, Update} ->
-            {ok, ChatId} = pe4kin_types:chat_id(message, Update),
-            HeartEmoji = pe4kin_emoji:name_to_char(heart),
-            ResponseText = unicode:characters_to_binary([<<"Hello ">>, HeartEmoji]),
-            {ok, _} = pe4kin:send_message(BotName, #{chat_id => ChatId, text => ResponseText})
+        {pe4kin_update, BotName, #{<<"message">> := Message}} ->
+            logger:notice("message: ~ts", [jiffy:encode(Message)]),
+            handle_message(BotName, Message)
     end,
     run_upd_handler().
+
+handle_message(BotName, #{<<"chat">> := #{<<"id">> := ChatId}, <<"text">> := Text}) ->
+    HeartEmoji = pe4kin_emoji:name_to_char(heart),
+    ResponseText = unicode:characters_to_binary([Text, HeartEmoji]),
+    {ok, _} = pe4kin:send_message(BotName, #{chat_id => ChatId, text => ResponseText});
+handle_message(_, _) ->
+    ok.
