@@ -18,13 +18,12 @@ run_update_handler() ->
 on_message(BotName, #{<<"chat">> := #{<<"id">> := ChatId}, <<"text">> := Text}) ->
     HeartEmoji = pe4kin_emoji:name_to_char(heart),
     ResponseText = unicode:characters_to_binary([Text, HeartEmoji]),
-    InlineKeyboardButton = #{ text => <<"X">>, callback_data => <<"0,0">> },
-    ReplyMarkup = #{inline_keyboard => [[InlineKeyboardButton]]},
+    Board = board:empty(),
     {ok, _} =
         pe4kin:send_message(BotName,
                             #{chat_id => ChatId,
                               text => ResponseText,
-                              reply_markup => ReplyMarkup});
+                              reply_markup => board:to_inline_keyboard(Board)});
 on_message(_, _) ->
     ok.
 
