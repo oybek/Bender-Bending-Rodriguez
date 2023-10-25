@@ -14,7 +14,7 @@ start(_StartType, _StartArgs) ->
     BotToken = unicode:characters_to_binary(Token),
 
     % Spawn process which listen for telegram updates
-    Pid = spawn(ben_upd_handler, run_upd_handler, []),
+    Pid = spawn(ben_update_handler, run_update_handler, []),
 
     % Initialize bot
     pe4kin:launch_bot(BotName, BotToken, #{receiver => true}),
