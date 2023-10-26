@@ -2,5 +2,4 @@
 
 -export([think/1]).
 
-think(Board) ->
-  Board.
+think(Board) -> Board.
