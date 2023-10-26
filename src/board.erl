@@ -1,6 +1,6 @@
 -module(board).
 
--export([free_cells/1, put/2, turn/1, empty/0, to_inline_keyboard/1, winner/1]).
+-export([free_cells/1, put/2, turn/1, empty/0, to_inline_keyboard/1, winner/1, serialize/1]).
 
 -define(SIZE, 3).
 
@@ -21,11 +21,15 @@ free_cells({Xs, Os}) ->
   [{X, Y} || X <- L, Y <- L, not lists:member({X, Y}, Xs ++ Os)].
 
 
-winner({Xs, Os} = _) ->
-  case {win_coords(Xs), win_coords(Os)} of
-    {true, false} -> x;
-    {false, true} -> o;
-    _ -> undefined
+winner({Xs, Os} = Board) ->
+  Xwin = win_coords(Xs),
+  Owin = win_coords(Os),
+  Full = free_cells(Board) =:= [],
+  if
+    Xwin -> xwon;
+    Owin -> owon;
+    Full -> draw;
+    true -> undefined
   end.
 
 
@@ -59,6 +63,24 @@ to_inline_keyboard({Xs, Os}) ->
       end
     ),
   #{inline_keyboard => InlineKeyboard}.
+
+
+serialize({Xs, Os}) ->
+  Board =
+    lists2:tabulate(
+      ?SIZE,
+      ?SIZE,
+      fun
+        (C) ->
+          {X, O} = {lists:member(C, Xs), lists:member(C, Os)},
+          if
+            X -> <<"x">>;
+            O -> <<"o">>;
+            true -> <<".">>
+          end
+      end
+    ),
+  list_to_binary(Board).
 
 
 to_string({X, Y}) ->

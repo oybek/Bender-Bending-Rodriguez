@@ -23,25 +23,16 @@ on_message({BotName, _} = _, #{<<"chat">> := #{<<"id">> := ChatId}, <<"text">> :
 on_message(_, _) -> logger:notice("doing nothing").
 
 send_menu(BotName, ChatId) ->
+  Keyboard = [[#{text => V, callback_data => V} || V <- [<<"x">>, <<"o">>]]],
   pe4kin:send_message(
     BotName,
     #{
       chat_id => ChatId,
       text => <<"You wanna play? Let's play!\nChoose " "you fighter!">>,
-      reply_markup
-      =>
-      #{
-        inline_keyboard
-        =>
-        [
-          [
-            #{text => <<"x">>, callback_data => <<"x">>},
-            #{text => <<"o">>, callback_data => <<"o">>}
-          ]
-        ]
-      }
+      reply_markup => #{inline_keyboard => Keyboard}
     }
   ).
+
 
 on_callback_query(
   {Bot, Boards} = _,
