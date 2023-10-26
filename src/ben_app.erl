@@ -11,6 +11,7 @@ start(_StartType, _StartArgs) ->
   BotName = <<"MrBenderBendingRodriguezBot">>,
   BotToken = unicode:characters_to_binary(Token),
   % Spawn process which listen for telegram updates
+  ben_brain:init(),
   Pid = spawn(ben_update_handler, run_update_handler, [{BotName, maps:new()}]),
   % Initialize bot
   pe4kin:launch_bot(BotName, BotToken, #{receiver => true}),
