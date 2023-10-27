@@ -1,14 +1,17 @@
 -module(board).
 
--export([free_cells/1, put/2, turn/1, empty/0, to_inline_keyboard/1, winner/1, serialize/1]).
+-export([free_cells/1, put/2, turn/1, empty/0, winner/1, serialize/1]).
 
 -define(SIZE, 3).
 
+-spec empty() -> domain:board().
 empty() -> {[], []}.
 
+-spec turn(domain:board()) -> domain:xo().
 turn({Xs, Os}) when length(Xs) =:= length(Os) -> x;
 turn(_) -> o.
 
+-spec put(domain:board(), domain:coord()) -> domain:board().
 put({Xs, Os} = Board, Coord) ->
   case turn(Board) of
     x -> {[Coord | Xs], Os};
@@ -16,23 +19,26 @@ put({Xs, Os} = Board, Coord) ->
   end.
 
 
+-spec free_cells(domain:board()) -> list(domain:coord()).
 free_cells({Xs, Os}) ->
   L = lists:seq(1, ?SIZE),
   [{X, Y} || X <- L, Y <- L, not lists:member({X, Y}, Xs ++ Os)].
 
 
+-spec winner(domain:board()) -> domain:outcome() | undefined.
 winner({Xs, Os} = Board) ->
   Xwin = win_coords(Xs),
   Owin = win_coords(Os),
   Full = free_cells(Board) =:= [],
   if
-    Xwin -> xwon;
-    Owin -> owon;
+    Xwin -> xWon;
+    Owin -> oWon;
     Full -> draw;
     true -> undefined
   end.
 
 
+-spec win_coords(list(domain:coord())) -> boolean().
 win_coords(Coords) ->
   lists:any(
     fun (Vcoords) -> Vcoords -- Coords =:= [] end,
@@ -48,23 +54,7 @@ win_coords(Coords) ->
     ]
   ).
 
-to_inline_keyboard({Xs, Os}) ->
-  InlineKeyboard =
-    lists2:tabulate(
-      ?SIZE,
-      ?SIZE,
-      fun
-        (C) ->
-          case {lists:member(C, Xs), lists:member(C, Os)} of
-            {true, false} -> #{text => <<"x">>, callback_data => to_string(C)};
-            {false, true} -> #{text => <<"o">>, callback_data => to_string(C)};
-            _ -> #{text => <<" ">>, callback_data => to_string(C)}
-          end
-      end
-    ),
-  #{inline_keyboard => InlineKeyboard}.
-
-
+-spec serialize(domain:board()) -> <<>>.
 serialize({Xs, Os}) ->
   Board =
     lists2:tabulate(
@@ -81,8 +71,3 @@ serialize({Xs, Os}) ->
       end
     ),
   list_to_binary(Board).
-
-
-to_string({X, Y}) ->
-  L = [integer_to_list(I) || I <- [X, Y]],
-  list_to_binary(string:join(L, ",")).
