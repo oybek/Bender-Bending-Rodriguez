@@ -2,9 +2,12 @@
 
 -export([run_update_handler/0]).
 
+-define(CMD_START, <<"/start">>).
+-define(CMD_EMPTY, <<"empty">>).
+-define(CMD_MENU, <<"menu">>).
+-define(CMD_SET, <<"set">>).
 -define(CMD_X, <<"x">>).
 -define(CMD_O, <<"o">>).
--define(EMPTY, <<"empty">>).
 
 %
 run_update_handler() ->
@@ -21,7 +24,9 @@ run_update_handler() ->
 
 
 %
-on_message(Bot, #{<<"chat">> := #{<<"id">> := ChatId}, <<"text">> := _}) -> send_menu(Bot, ChatId);
+on_message(Bot, #{<<"chat">> := #{<<"id">> := ChatId}, <<"text">> := ?CMD_START}) ->
+  send_menu(Bot, ChatId);
+
 on_message(_, _) -> logger:notice("doing nothing").
 
 %
@@ -46,12 +51,12 @@ on_command(Bot, {ChatId, MessageId}, ?CMD_O) ->
   Board = ben_brain:think(board:empty()),
   send_board(Bot, {ChatId, MessageId}, Board);
 
-on_command(_, _, ?EMPTY) -> ok;
-
-on_command(Bot, {ChatId, MessageId}, Data) ->
+on_command(Bot, {ChatId, MessageId}, <<"set", Arg/bitstring>>) ->
   Board = board:empty(),
-  [X, Y] = [binary_to_integer(N) || N <- binary:split(Data, <<",">>)],
-  send_board(Bot, {ChatId, MessageId}, play(Board, {X, Y})).
+  [X, Y] = [binary_to_integer(N) || N <- binary:split(Arg, <<",">>)],
+  send_board(Bot, {ChatId, MessageId}, play(Board, {X, Y}));
+
+on_command(_, _, ?CMD_EMPTY) -> ok.
 
 
 play(Board, {X, Y}) ->
@@ -89,6 +94,12 @@ send_board(Bot, {ChatId, MessageId}, Board) ->
     }
   ).
 
+-spec to_string(domain:coord()) -> bitstring().
+to_string({X, Y}) ->
+  L = [integer_to_list(I) || I <- [X, Y]],
+  list_to_binary(string:join(L, ",")).
+
+
 -spec to_inline_keyboard(domain:board()) -> #{inline_keyboard := any()}.
 to_inline_keyboard({Xs, Os} = Board) ->
   Winner = board:winner(Board),
@@ -101,26 +112,22 @@ to_inline_keyboard({Xs, Os} = Board) ->
           CallbackData =
             case Winner of
               undefined -> to_string(C);
-              _ -> ?EMPTY
+              _ -> ?CMD_EMPTY
             end,
           X = lists:member(C, Xs),
           O = lists:member(C, Os),
           if
-            X -> #{text => <<"x">>, callback_data => ?EMPTY};
-            O -> #{text => <<"o">>, callback_data => ?EMPTY};
-            true -> #{text => <<" ">>, callback_data => CallbackData}
+            X -> #{text => <<"x">>, callback_data => ?CMD_EMPTY};
+            O -> #{text => <<"o">>, callback_data => ?CMD_EMPTY};
+
+            true ->
+              #{text => <<" ">>, callback_data => <<?CMD_SET/bitstring, CallbackData/bitstring>>}
           end
       end
     ),
   #{
     inline_keyboard => case Winner of
       undefined -> InlineKeyboard;
-      _ -> InlineKeyboard ++ [[#{text => <<"Again">>, callback_data => <<"menu">>}]]
+      _ -> InlineKeyboard ++ [[#{text => <<"New Game">>, callback_data => ?CMD_MENU}]]
     end
   }.
-
-
--spec to_string(domain:coord()) -> bitstring().
-to_string({X, Y}) ->
-  L = [integer_to_list(I) || I <- [X, Y]],
-  list_to_binary(string:join(L, ",")).
