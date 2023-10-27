@@ -11,6 +11,7 @@ start(_StartType, _StartArgs) ->
   BotName = <<"MrBenderBendingRodriguezBot">>,
   BotToken = unicode:characters_to_binary(Token),
   % Spawn process which listen for telegram updates
+  ben_handler:init(),
   ben_brain:init(),
   Pid = spawn(ben_handler, run_update_handler, []),
   % Initialize bot

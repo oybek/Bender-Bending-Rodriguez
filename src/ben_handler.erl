@@ -1,6 +1,6 @@
 -module(ben_handler).
 
--export([run_update_handler/0]).
+-export([run_update_handler/0, init/0]).
 
 -define(CMD_START, <<"/start">>).
 -define(CMD_EMPTY, <<"empty">>).
@@ -8,6 +8,9 @@
 -define(CMD_SET, <<"set">>).
 -define(CMD_X, <<"x">>).
 -define(CMD_O, <<"o">>).
+-define(MEM_FILE, '01.mem').
+
+init() -> {ok, _} = dets:open_file(?MEM_FILE, []).
 
 %
 run_update_handler() ->
@@ -41,24 +44,33 @@ on_callback_query(
 
 %
 -spec on_command(bitstring(), domain:coord(), bitstring()) -> any().
-on_command(Bot, {ChatId, _}, <<"/menu">>) -> send_menu(Bot, ChatId);
+on_command(Bot, {ChatId, _}, ?CMD_MENU) -> send_menu(Bot, ChatId);
 
-on_command(Bot, {ChatId, MessageId}, ?CMD_X) ->
+on_command(Bot, Coord, ?CMD_X) ->
   Board = board:empty(),
-  send_board(Bot, {ChatId, MessageId}, Board);
+  dets:insert(?MEM_FILE, {Coord, Board}),
+  send_board(Bot, Coord, Board);
 
-on_command(Bot, {ChatId, MessageId}, ?CMD_O) ->
+on_command(Bot, Coord, ?CMD_O) ->
   Board = ben_brain:think(board:empty()),
-  send_board(Bot, {ChatId, MessageId}, Board);
+  dets:insert(?MEM_FILE, {Coord, Board}),
+  send_board(Bot, Coord, Board);
 
-on_command(Bot, {ChatId, MessageId}, <<"set", Arg/bitstring>>) ->
-  Board = board:empty(),
-  [X, Y] = [binary_to_integer(N) || N <- binary:split(Arg, <<",">>)],
-  send_board(Bot, {ChatId, MessageId}, play(Board, {X, Y}));
+on_command(Bot, Coord, <<"set", Arg/bitstring>>) ->
+  case dets:lookup(?MEM_FILE, Coord) of
+    [{_, Board}] ->
+      [X, Y] = [binary_to_integer(N) || N <- binary:split(Arg, <<",">>)],
+      NextBoard = play(Board, {X, Y}),
+      dets:insert(?MEM_FILE, {Coord, NextBoard}),
+      send_board(Bot, Coord, play(Board, {X, Y}));
 
-on_command(_, _, ?CMD_EMPTY) -> ok.
+    {error, _} -> ok
+  end;
+
+on_command(_, _, _) -> ok.
 
 
+-spec play(domain:board(), domain:coord()) -> domain:board().
 play(Board, {X, Y}) ->
   case lists:member({X, Y}, board:free_cells(Board)) of
     true -> ben_brain:think(board:put(Board, {X, Y}));
@@ -111,7 +123,7 @@ to_inline_keyboard({Xs, Os} = Board) ->
         (C) ->
           CallbackData =
             case Winner of
-              undefined -> to_string(C);
+              undefined -> <<?CMD_SET/bitstring, (to_string(C))/bitstring>>;
               _ -> ?CMD_EMPTY
             end,
           X = lists:member(C, Xs),
@@ -119,9 +131,7 @@ to_inline_keyboard({Xs, Os} = Board) ->
           if
             X -> #{text => <<"x">>, callback_data => ?CMD_EMPTY};
             O -> #{text => <<"o">>, callback_data => ?CMD_EMPTY};
-
-            true ->
-              #{text => <<" ">>, callback_data => <<?CMD_SET/bitstring, CallbackData/bitstring>>}
+            true -> #{text => <<" ">>, callback_data => CallbackData}
           end
       end
     ),
